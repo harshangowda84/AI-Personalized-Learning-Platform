@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Learning Platform - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .users-section {
+            padding: 30px;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .users-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .users-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .users-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #e74c3c;
+            font-size: 1.2rem;
+        }
+
+        .export-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-weight: 600;
+        }
+
+        .export-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Admin Dashboard</h1>
+            <p>AI Personalized Learning Platform</p>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="loading">Loading statistics...</div>
+        </div>
+
+        <div class="users-section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 class="section-title">👥 Registered Users</h2>
+                <div>
+                    <button class="refresh-btn" onclick="loadData()">🔄 Refresh</button>
+                    <button class="export-btn" onclick="exportUsers()">📋 Export Data</button>
+                </div>
+            </div>
+            <div id="usersTable">
+                <div class="loading">Loading users...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function loadData() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/users`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayStats(data);
+                    displayUsers(data.users);
+                } else {
+                    showError('Failed to load data: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error connecting to server. Make sure the backend is running on localhost:5000');
+            }
+        }
+
+        function displayStats(data) {
+            const { total_users, summary } = data;
+            
+            const statsHtml = `
+                <div class="stat-card">
+                    <div class="stat-number">${total_users}</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${summary.total_learning_hours}</div>
+                    <div class="stat-label">Learning Hours</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${summary.total_courses_completed}</div>
+                    <div class="stat-label">Courses Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${summary.total_achievements}</div>
+                    <div class="stat-label">Total Achievements</div>
+                </div>
+            `;
+            
+            document.getElementById('statsGrid').innerHTML = statsHtml;
+        }
+
+        function displayUsers(users) {
+            if (users.length === 0) {
+                document.getElementById('usersTable').innerHTML = 
+                    '<div class="loading">No users registered yet.</div>';
+                return;
+            }
+
+            const tableHtml = `
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>📧 Email</th>
+                            <th>👤 Name</th>
+                            <th>📅 Joined</th>
+                            <th>⏱️ Learning Hours</th>
+                            <th>📚 Courses</th>
+                            <th>🏆 Achievements</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td>${user.email}</td>
+                                <td>${user.name || 'Not provided'}</td>
+                                <td>${formatDate(user.created_at)}</td>
+                                <td><span class="badge">${user.learning_hours}h</span></td>
+                                <td><span class="badge">${user.courses_completed}</span></td>
+                                <td><span class="badge">${user.achievements}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('usersTable').innerHTML = tableHtml;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        function showError(message) {
+            document.getElementById('statsGrid').innerHTML = 
+                `<div class="error">❌ ${message}</div>`;
+            document.getElementById('usersTable').innerHTML = 
+                `<div class="error">❌ ${message}</div>`;
+        }
+
+        async function exportUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/users/export`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const dataStr = JSON.stringify(data, null, 2);
+                    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                    
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(dataBlob);
+                    link.download = `users_export_${new Date().toISOString().split('T')[0]}.json`;
+                    link.click();
+                } else {
+                    alert('Failed to export data');
+                }
+            } catch (error) {
+                alert('Error exporting data: ' + error.message);
+            }
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadData);
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>

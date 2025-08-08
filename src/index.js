@@ -2,7 +2,7 @@ import React from "react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import { TopicPage, RoadmapPage, QuizPage, ProfilePage, LandingPage, LoginPage, RegisterPage } from "./pages/index";
+import { TopicPage, RoadmapPage, QuizPage, ProfilePage, LandingPage, LoginPage, RegisterPage, AdminPage } from "./pages/index";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 
@@ -22,6 +22,10 @@ const router = createBrowserRouter([
   {
     path: "/profile",
     element: <ProfilePage />,
+  },
+  {
+    path: "/admin",
+    element: <AdminPage />,
   },
   {
     path: "/test",

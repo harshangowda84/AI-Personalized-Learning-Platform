@@ -103,6 +103,42 @@ def get_profile():
         "profile": user.get("profile", {})
     })
 
+# Admin endpoint to check user statistics
+@api.route("/api/admin/users", methods=["GET"])
+def get_user_stats():
+    users = load_users()
+    total_users = len(users)
+    
+    # Calculate statistics
+    user_stats = []
+    for email, user_data in users.items():
+        user_stats.append({
+            "email": email,
+            "name": user_data.get("name", ""),
+            "created_at": user_data.get("created_at", ""),
+            "learning_hours": user_data.get("profile", {}).get("learning_hours", 0),
+            "courses_completed": user_data.get("profile", {}).get("courses_completed", 0),
+            "achievements": len(user_data.get("profile", {}).get("achievements", []))
+        })
+    
+    # Sort by creation date (newest first)
+    user_stats.sort(key=lambda x: x["created_at"], reverse=True)
+    
+    return jsonify({
+        "total_users": total_users,
+        "users": user_stats,
+        "summary": {
+            "total_learning_hours": sum(user["learning_hours"] for user in user_stats),
+            "total_courses_completed": sum(user["courses_completed"] for user in user_stats),
+            "total_achievements": sum(user["achievements"] for user in user_stats)
+        }
+    })
+
+@api.route("/api/admin/users/export", methods=["GET"])
+def export_users():
+    users = load_users()
+    return jsonify(users)
+
 
 @api.route("/api/roadmap", methods=["POST"])
 def get_roadmap():
