@@ -4,7 +4,7 @@ import axios from "axios";
 import "./quiz.css";
 import Header from "../../components/header/header";
 import Loader from "../../components/loader/loader";
-import { CircleCheck, CircleX } from "lucide-react";
+import { CircleCheck, CircleX, ArrowLeft } from "lucide-react";
 
 const Question = ({ questionData, num, style }) => {
   const [attempted, setAttempted] = useState(false);
@@ -90,6 +90,12 @@ const QuizPage = (props) => {
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
+
+  // Handle back navigation
+  const handleBack = () => {
+    // Go back to roadmap
+    navigate("/roadmap?topic=" + encodeURI(course));
+  };
 
   const course = searchParams.get("topic");
   const weekNum = searchParams.get("week");
@@ -195,7 +201,7 @@ const QuizPage = (props) => {
                 (window.timeTaken / (5 * 60 * 1000 * window.numQues));
             localStorage.setItem("hardnessIndex", hardnessIndex);
             localStorage.setItem("quizStats", JSON.stringify(quizStats));
-            navigate("/roadmap?topic=" + encodeURI(course));
+            navigate("/roadmap?topic=" + encodeURI(course), { replace: true });
           }}
         >
           Submit
@@ -211,7 +217,38 @@ const QuizPage = (props) => {
         Generating Personalized Questions for You ...
       </Loader>
       <div className="content">
-        <h1>{subtopic}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
+          <button
+            onClick={handleBack}
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '0.75rem',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '1rem',
+              color: 'white'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(209, 78, 196, 0.1)';
+              e.target.style.borderColor = '#D14EC4';
+              e.target.style.transform = 'translateX(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+              e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+              e.target.style.transform = 'translateX(0)';
+            }}
+          >
+            <ArrowLeft size={24} />
+          </button>
+          <h1 style={{ margin: 0 }}>{subtopic}</h1>
+        </div>
         <h3 style={{ opacity: "0.61", fontWeight: "300", marginBottom: "2em" }}>
           {description}
         </h3>

@@ -182,3 +182,129 @@
   width: 100%;
   margin-bottom: 1em;
 }
+
+/* Structured Learning Component Styles */
+.structured-learning {
+  color: white;
+  font-family: inherit;
+}
+
+/* Full-screen modal override for structured learning */
+.modal:has(.structured-learning) .modal-content {
+  max-width: 100vw !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background-color: #090909 !important;
+}
+
+.structured-learning h3, 
+.structured-learning h4 {
+  margin: 0;
+}
+
+.structured-learning textarea {
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.structured-learning textarea:focus {
+  outline: none;
+  border-color: #D14EC4;
+  box-shadow: 0 0 0 2px rgba(209, 78, 196, 0.2);
+}
+
+.structured-learning button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.structured-learning button:active {
+  transform: translateY(0);
+}
+
+/* Enhanced Markdown Content Styling */
+.structured-learning h1 {
+  color: #D14EC4;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid rgba(209, 78, 196, 0.3);
+  padding-bottom: 1rem;
+}
+
+.structured-learning h2 {
+  color: #AFD14E;
+  font-size: 1.8rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.structured-learning h3 {
+  color: #4ED1B1;
+  font-size: 1.4rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.structured-learning p {
+  margin-bottom: 1.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+}
+
+.structured-learning ul, 
+.structured-learning ol {
+  margin-left: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.structured-learning li {
+  margin-bottom: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.05rem;
+}
+
+.structured-learning code {
+  background: rgba(209, 78, 196, 0.1);
+  color: #D14EC4;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.structured-learning pre {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.structured-learning blockquote {
+  border-left: 4px solid #AFD14E;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-style: italic;
+}
+
+/* Custom scrollbar for better aesthetics */
+.structured-learning ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.structured-learning ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.structured-learning ::-webkit-scrollbar-thumb {
+  background: rgba(209, 78, 196, 0.5);
+  border-radius: 4px;
+}
+
+.structured-learning ::-webkit-scrollbar-thumb:hover {
+  background: rgba(209, 78, 196, 0.7);
+}

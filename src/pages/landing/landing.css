@@ -1,0 +1,214 @@
+.landingMain {
+  flex-direction: column;
+  width: 100%;
+  padding-top: 3rem;
+  gap: 4rem;
+}
+
+.heroSection {
+  width: 100%;
+  min-height: 70vh;
+  text-align: center;
+  flex-direction: column;
+}
+
+.heroContent {
+  max-width: 900px;
+  padding: 2rem;
+}
+
+.heroTitle {
+  font-size: 4rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #D14EC4, #AFD14E, #4ED1B1);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 3s ease infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.heroSubtitle {
+  color: #c7c7c7;
+  font-size: 2rem;
+  font-weight: 300;
+  margin-bottom: 1.5rem;
+}
+
+.heroDescription {
+  color: #bebebe;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.heroButtons {
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.primaryButton {
+  position: relative;
+  font-size: 1.2rem;
+  padding: 0.8em 2.5em;
+  border-radius: 500px;
+  background-color: transparent;
+  border: 2px solid white;
+  color: white;
+  transition: 0.5s;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.primaryButton::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  top: -2px;
+  left: -2px;
+  border-radius: 500px;
+  background: conic-gradient(
+    #ff6868,
+    #f0ff91,
+    #00e3a3,
+    #00d0ff,
+    #5142ff,
+    #8f00ff,
+    #fa00ff,
+    #ff006b
+  );
+  transition: 0.5s;
+  z-index: -2;
+}
+
+.primaryButton::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0px;
+  left: 0px;
+  border-radius: 500px;
+  background: #151627;
+  transition: 0.5s;
+  z-index: -1;
+}
+
+.primaryButton:hover::after {
+  width: calc(100% + 16px);
+  height: calc(100% + 16px);
+  top: -7px;
+  left: -7px;
+  filter: blur(20px);
+}
+
+.secondaryButton {
+  font-size: 1.2rem;
+  padding: 0.8em 2.5em;
+  border-radius: 500px;
+  background-color: transparent;
+  border: 2px solid #5b5b67;
+  color: #c7c7c7;
+  transition: 0.3s;
+}
+
+.secondaryButton:hover {
+  border-color: white;
+  color: white;
+}
+
+.featuresSection {
+  width: 100%;
+  text-align: center;
+  padding: 2rem;
+}
+
+.sectionTitle {
+  color: #c7c7c7;
+  font-size: 2.5rem;
+  font-weight: 300;
+  margin-bottom: 3rem;
+}
+
+.featuresGrid {
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 2rem;
+}
+
+.featureCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 280px;
+  text-align: center;
+  transition: 0.3s;
+}
+
+.featureCard:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.featureIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--clr);
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  filter: brightness(1.5);
+}
+
+.featureTitle {
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+.featureDescription {
+  color: #bebebe;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.demoSection {
+  width: 100%;
+  text-align: center;
+  padding: 3rem 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  margin: 2rem;
+  max-width: 800px;
+}
+
+.demoDescription {
+  color: #bebebe;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.demoButton {
+  font-size: 1.1rem;
+  padding: 0.7em 2em;
+}

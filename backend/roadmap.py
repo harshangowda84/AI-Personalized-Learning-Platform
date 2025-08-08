@@ -1,6 +1,7 @@
 import os
 import google.generativeai as genai
 import json
+import re
 from dotenv import load_dotenv
 
 
@@ -9,7 +10,51 @@ load_dotenv()
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
 
+def is_valid_topic(topic):
+    """
+    Basic validation to check if the input seems like a valid learning topic
+    """
+    if not topic or len(topic.strip()) < 2:
+        return False
+    
+    # Clean the topic
+    cleaned_topic = topic.strip()
+    
+    # Check if topic is mostly letters and spaces (allow some punctuation)
+    alpha_ratio = len(re.findall(r'[a-zA-Z\s]', cleaned_topic)) / len(cleaned_topic)
+    if alpha_ratio < 0.6:  # Relaxed from 0.5 to 0.6, but more permissive
+        return False
+        
+    # Check for minimum meaningful content - at least one letter
+    if not re.search(r'[a-zA-Z]', cleaned_topic):
+        return False
+        
+    # Check if it's just repeated characters (like "aaa" or "111")
+    unique_chars = set(cleaned_topic.lower().replace(' ', ''))
+    if len(unique_chars) < 2:  # Relaxed from 3 to 2
+        return False
+    
+    # Check for completely random strings (mostly consonants or no vowels)
+    has_vowel = bool(re.search(r'[aeiouAEIOU]', cleaned_topic))
+    if len(cleaned_topic) > 5 and not has_vowel:
+        return False
+        
+    return True
+
+
 def create_roadmap(topic, time, knowledge_level):
+    # Debug: Print the topic being validated
+    print(f"Validating topic: '{topic}'")
+    
+    # Validate input topic
+    if not is_valid_topic(topic):
+        print(f"Topic validation failed for: '{topic}'")
+        return {
+            "error": "Please enter a valid learning topic. For example: 'Python Programming', 'Data Science', 'Machine Learning', etc."
+        }
+    
+    print(f"Topic validation passed for: '{topic}'")
+    
     # Create the model
     # See https://ai.google.dev/api/python/google/generativeai/GenerativeModel
     generation_config = {

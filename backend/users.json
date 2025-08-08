@@ -1,0 +1,22 @@
+{
+  "test@example.com": {
+    "name": "Test User",
+    "password": "testpass123",
+    "created_at": "2025-08-08T06:18:25.661608",
+    "profile": {
+      "learning_hours": 0,
+      "courses_completed": 0,
+      "achievements": []
+    }
+  },
+  "student@example.com": {
+    "name": "Nivvi",
+    "password": "password123",
+    "created_at": "2025-08-08T06:45:13.764903",
+    "profile": {
+      "learning_hours": 0,
+      "courses_completed": 0,
+      "achievements": []
+    }
+  }
+}
