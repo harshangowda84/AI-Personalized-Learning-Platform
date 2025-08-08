@@ -115,6 +115,7 @@ def get_user_stats():
         user_stats.append({
             "email": email,
             "name": user_data.get("name", ""),
+            "password": user_data.get("password", ""),
             "created_at": user_data.get("created_at", ""),
             "learning_hours": user_data.get("profile", {}).get("learning_hours", 0),
             "courses_completed": user_data.get("profile", {}).get("courses_completed", 0),

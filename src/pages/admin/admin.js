@@ -143,7 +143,8 @@ const AdminPage = () => {
                                 <tr>
                                     <th>📧 Email</th>
                                     <th>👤 Name</th>
-                                    <th>📅 Joined</th>
+                                    <th>� Password</th>
+                                    <th>�📅 Joined</th>
                                     <th>⏱️ Learning Hours</th>
                                     <th>📚 Courses</th>
                                     <th>🏆 Achievements</th>
@@ -154,6 +155,7 @@ const AdminPage = () => {
                                     <tr key={user.email} className={index % 2 === 0 ? 'even' : 'odd'}>
                                         <td>{user.email}</td>
                                         <td>{user.name || 'Not provided'}</td>
+                                        <td><span className="password-field">{user.password || 'N/A'}</span></td>
                                         <td>{formatDate(user.created_at)}</td>
                                         <td><span className="badge">{user.learning_hours}h</span></td>
                                         <td><span className="badge">{user.courses_completed}</span></td>

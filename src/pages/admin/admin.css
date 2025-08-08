@@ -200,6 +200,24 @@
     text-align: center;
 }
 
+.password-field {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #495057;
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
+}
+
+.password-field:hover {
+    background: #e9ecef;
+    cursor: pointer;
+}
+
 .loading, .error, .no-users {
     text-align: center;
     padding: 50px 20px;
