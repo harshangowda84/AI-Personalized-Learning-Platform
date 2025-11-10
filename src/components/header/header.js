@@ -14,9 +14,11 @@ const Header = ({ showBackButton = false, onBackClick }) => {
   // Debug logging
   console.log('Header - isLoggedIn:', isLoggedIn, 'userName:', userName);
 
-  // Check if we're on the profile page
+  // Check if we're on the profile, topic, landing, or register page
   const isProfilePage = location.pathname === '/profile';
   const isTopicPage = location.pathname === '/topic';
+  const isLandingPage = location.pathname === '/' || location.pathname === '/landing';
+  const isRegisterPage = location.pathname === '/register';
 
   // Track navigation for back button
   useEffect(() => {
@@ -107,8 +109,8 @@ const Header = ({ showBackButton = false, onBackClick }) => {
         <img src="logo.png" alt="LearnX" height={40} className="logo" />
       )}
       
-      {/* Only show home button if not on topic page */}
-      {!isTopicPage && (
+  {/* Only show home button if not on topic, landing, or register page */}
+  {(!isTopicPage && !isLandingPage && !isRegisterPage) && (
         <button 
           className="homeButton"
           onClick={handleHomeClick}

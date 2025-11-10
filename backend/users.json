@@ -18,5 +18,15 @@
       "courses_completed": 0,
       "achievements": []
     }
+  },
+  "harshangowda84@gmail.com": {
+    "name": "harshan",
+    "password": "harshan123",
+    "created_at": "2025-08-09T10:23:53.394562",
+    "profile": {
+      "learning_hours": 0,
+      "courses_completed": 0,
+      "achievements": []
+    }
   }
 }
