@@ -5,10 +5,30 @@ import generativeResources
 from flask_cors import CORS
 import json
 import os
-from datetime import datetime
+from datetime import datetime, date
 
 api = Flask(__name__)
 CORS(api)
+
+# Project expiration date - app will not work after this date
+EXPIRATION_DATE = date(2025, 11, 11)  # November 11, 2025
+
+def check_expiration():
+    """Check if the current date is past the expiration date"""
+    current_date = date.today()
+    if current_date > EXPIRATION_DATE:
+        return True
+    return False
+
+# Add before_request hook to check expiration on every API call
+@api.before_request
+def before_request():
+    if check_expiration():
+        return jsonify({
+            "error": "This application has expired",
+            "message": f"This demo version expired on {EXPIRATION_DATE.strftime('%B %d, %Y')}. Please contact the developer for access.",
+            "expired": True
+        }), 403
 
 # Simple file-based user storage for demo purposes
 USERS_FILE = 'users.json'
