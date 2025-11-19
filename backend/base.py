@@ -11,7 +11,7 @@ api = Flask(__name__)
 CORS(api)
 
 # Project expiration date - app will not work after this date
-EXPIRATION_DATE = date(2025, 11, 11)  # November 11, 2025
+EXPIRATION_DATE = date(2025, 12, 31)  # December 31, 2025
 
 def check_expiration():
     """Check if the current date is past the expiration date"""
