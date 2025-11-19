@@ -4,6 +4,7 @@ import { useNavigate, NavLink } from "react-router-dom";
 import "./profile.css";
 import Header from "../../components/header/header";
 import Loader from "../../components/loader/loader";
+import QuizMarksSection from "./QuizMarksSection";
 import { ArrowRight, Plus, Trash2, AlertTriangle } from "lucide-react";
 import {
   Chart as ChartJS,
@@ -41,6 +42,37 @@ const getStats = (roadmaps, quizStats) => {
   }
   console.log(stats);
   return stats;
+};
+
+// Get detailed quiz statistics with marks
+const getQuizMarks = (roadmaps, quizStats) => {
+  const quizMarks = [];
+  
+  for (let topic in quizStats) {
+    if (!roadmaps[topic]) continue;
+    
+    Object.keys(roadmaps[topic]).forEach((week, weekIndex) => {
+      roadmaps[topic][week].subtopics.forEach((subtopic, subtopicIndex) => {
+        const quizData = quizStats[topic]?.[weekIndex + 1]?.[subtopicIndex + 1];
+        if (quizData) {
+          quizMarks.push({
+            topic,
+            week: week,
+            weekNum: weekIndex + 1,
+            subtopic: subtopic.subtopic,
+            subtopicNum: subtopicIndex + 1,
+            score: quizData.numCorrect,
+            total: quizData.numQues,
+            percentage: ((quizData.numCorrect / quizData.numQues) * 100).toFixed(1),
+            timeTaken: quizData.timeTaken,
+            timestamp: quizData.timestamp || Date.now()
+          });
+        }
+      });
+    });
+  }
+  
+  return quizMarks.sort((a, b) => b.timestamp - a.timestamp);
 };
 
 // Get AI Learning Progress Statistics
@@ -195,6 +227,8 @@ const ProfilePage = (props) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
   const [avatarStyle, setAvatarStyle] = useState(0); // For cycling through avatar styles
+  const [quizMarks, setQuizMarks] = useState([]);
+  const [showAllQuizzes, setShowAllQuizzes] = useState(false);
   const navigate = useNavigate();
 
   // Generate user initials for avatar
@@ -534,6 +568,9 @@ const ProfilePage = (props) => {
     // Set quiz-based stats
     setStats(getStats(roadmaps, quizStats));
     
+    // Set quiz marks
+    setQuizMarks(getQuizMarks(roadmaps, quizStats));
+    
     // Set AI learning stats
     const aiStats = getAILearningStats(roadmaps);
     setAiLearningStats(aiStats);
@@ -755,14 +792,6 @@ const ProfilePage = (props) => {
             <h3>
               Ongoing Courses: <b>{Object.keys(topics).length}</b>
             </h3>
-            <h3>
-              Hardness Index:{" "}
-              <b>
-                {(
-                  parseFloat(localStorage.getItem("hardnessIndex")) || 1
-                ).toFixed(3)}
-              </b>
-            </h3>
             {/* AI Learning Progress Stats */}
             {overallAIStats.totalChapters > 0 && (
               <>
@@ -775,16 +804,10 @@ const ProfilePage = (props) => {
                 <h3>
                   Learning Notes: <b>{overallAIStats.totalNotes}</b>
                 </h3>
-                <h3>
-                  Bookmarks: <b>{overallAIStats.totalBookmarks}</b>
-                </h3>
               </>
             )}
             {userProfile?.profile && (
               <>
-                <h3>
-                  Learning Hours: <b>{userProfile.profile.learning_hours || 0}</b>
-                </h3>
                 <h3>
                   Courses Completed: <b>{userProfile.profile.courses_completed || 0}</b>
                 </h3>
@@ -957,166 +980,105 @@ const ProfilePage = (props) => {
         <div className="progress">
           <h2 className="heading">Learning Progress</h2>
           
+          <QuizMarksSection 
+            quizMarks={quizMarks}
+            showAllQuizzes={showAllQuizzes}
+            setShowAllQuizzes={setShowAllQuizzes}
+          />
+          
           {/* Overall Progress Summary */}
-          {(Object.keys(percentCompletedData).length > 0 || Object.keys(aiProgressData).length > 0) && (
+          {overallAIStats.totalChapters > 0 && (
             <div style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '16px',
-              padding: '2rem',
-              marginBottom: '2rem',
-              border: '1px solid rgba(209, 78, 196, 0.2)'
+              background: 'linear-gradient(135deg, rgba(209, 78, 196, 0.05), rgba(175, 209, 78, 0.05))',
+              borderRadius: '20px',
+              padding: '2.5rem',
+              marginBottom: '2.5rem',
+              border: '1px solid rgba(209, 78, 196, 0.2)',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
             }}>
-              <h3 style={{ color: '#D14EC4', marginBottom: '1.5rem', textAlign: 'center' }}>
-                📊 Overall Learning Summary
-              </h3>
               <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-                gap: '1.5rem' 
+                marginBottom: '2rem',
+                paddingBottom: '1rem',
+                borderBottom: '1px solid rgba(209, 78, 196, 0.2)'
               }}>
-                {/* Quiz Progress Summary */}
-                {Object.keys(percentCompletedData).length > 0 && (
-                  <div style={{
-                    background: 'rgba(78, 209, 177, 0.1)',
-                    borderRadius: '12px',
-                    padding: '1.5rem',
-                    border: '1px solid rgba(78, 209, 177, 0.3)'
-                  }}>
-                    <div style={{ color: '#4ED1B1', fontSize: '2rem', marginBottom: '0.5rem' }}>🎯</div>
-                    <h4 style={{ color: '#4ED1B1', marginBottom: '0.5rem' }}>Quiz Progress</h4>
-                    <p style={{ color: '#ccc', fontSize: '0.9rem' }}>
-                      Completed quizzes and assessments
-                    </p>
-                  </div>
-                )}
-                
-                {/* AI Learning Progress Summary */}
-                {overallAIStats.totalChapters > 0 && (
-                  <div style={{
-                    background: 'rgba(209, 78, 196, 0.1)',
-                    borderRadius: '12px',
-                    padding: '1.5rem',
-                    border: '1px solid rgba(209, 78, 196, 0.3)'
-                  }}>
-                    <div style={{ color: '#D14EC4', fontSize: '2rem', marginBottom: '0.5rem' }}>📚</div>
-                    <h4 style={{ color: '#D14EC4', marginBottom: '0.5rem' }}>AI Learning Progress</h4>
-                    <p style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                <h3 style={{ 
+                  color: '#D14EC4', 
+                  margin: 0,
+                  fontSize: '1.8rem',
+                  fontWeight: '700',
+                  marginBottom: '0.5rem'
+                }}>
+                  📊 Overall Learning Summary
+                </h3>
+                <p style={{ color: '#999', fontSize: '0.95rem', margin: 0 }}>
+                  Your complete learning journey at a glance
+                </p>
+              </div>
+              
+              {/* AI Learning Progress Summary */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(209, 78, 196, 0.1), rgba(175, 209, 78, 0.08))',
+                borderRadius: '16px',
+                padding: '2rem',
+                border: '1px solid rgba(209, 78, 196, 0.3)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                      <div style={{ color: '#D14EC4', fontSize: '2.5rem' }}>📚</div>
+                      <h4 style={{ color: '#D14EC4', margin: 0, fontSize: '1.4rem', fontWeight: '700' }}>AI Learning Progress</h4>
+                    </div>
+                    <p style={{ color: '#aaa', fontSize: '0.95rem', margin: 0 }}>
                       Interactive chapters and study sessions
                     </p>
-                    <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
-                      <div style={{ marginBottom: '0.3rem' }}>
-                        <span style={{ color: '#D14EC4' }}>
-                          {overallAIStats.overallCompletionPercentage.toFixed(1)}%
-                        </span> completed
-                      </div>
-                      <div style={{ marginBottom: '0.3rem' }}>
-                        <span style={{ color: '#AFD14E' }}>
-                          {formatStudyTime(overallAIStats.totalStudyTime)}
-                        </span> studied
-                      </div>
+                  </div>
+                  <div style={{
+                    background: 'rgba(209, 78, 196, 0.2)',
+                    padding: '1rem 1.5rem',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(209, 78, 196, 0.4)',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ color: '#D14EC4', fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                      {overallAIStats.overallCompletionPercentage.toFixed(1)}%
+                    </div>
+                    <div style={{ color: '#ccc', fontSize: '0.85rem' }}>Complete</div>
+                  </div>
+                </div>
+                <div style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '1rem'
+                }}>
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    padding: '1.25rem',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255, 255, 255, 0.05)'
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.85rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Study Time</div>
+                    <div style={{ color: '#AFD14E', fontSize: '1.6rem', fontWeight: '700' }}>
+                      {formatStudyTime(overallAIStats.totalStudyTime)}
                     </div>
                   </div>
-                )}
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    padding: '1.25rem',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255, 255, 255, 0.05)'
+                  }}>
+                    <div style={{ color: '#888', fontSize: '0.85rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Chapters</div>
+                    <div style={{ color: '#4EAAD1', fontSize: '1.6rem', fontWeight: '700' }}>
+                      {overallAIStats.totalChapters}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          <div className="charts">
-            {/* Quiz Progress Chart */}
-            {Object.keys(percentCompletedData).length > 0 && (
-              <div style={{ marginBottom: '3rem' }}>
-                <h3 style={{ color: '#4ED1B1', marginBottom: '1rem', textAlign: 'center' }}>
-                  🎯 Quiz Completion Progress
-                </h3>
-                <div
-                  className="bar"
-                  style={{
-                    maxWidth: "700px",
-                    minHeight: "400px",
-                    filter: "brightness(1.5)",
-                    background: "rgba(0, 0, 0, 0.3)",
-                    borderRadius: "20px",
-                    padding: "20px",
-                    margin: "auto",
-                    border: "1px solid rgba(78, 209, 177, 0.3)"
-                  }}
-                >
-                  <Bar
-                    data={percentCompletedData}
-                    options={{ 
-                      maintainAspectRatio: false, 
-                      indexAxis: "y",
-                      plugins: {
-                        legend: {
-                          labels: {
-                            color: '#4ED1B1'
-                          }
-                        }
-                      },
-                      scales: {
-                        x: {
-                          ticks: { color: '#ccc' },
-                          grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                        },
-                        y: {
-                          ticks: { color: '#ccc' },
-                          grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* AI Learning Progress Chart */}
-            {Object.keys(aiProgressData).length > 0 && (
-              <div style={{ marginBottom: '3rem' }}>
-                <h3 style={{ color: '#D14EC4', marginBottom: '1rem', textAlign: 'center' }}>
-                  📚 AI Learning Progress
-                </h3>
-                <div
-                  className="bar"
-                  style={{
-                    maxWidth: "700px",
-                    minHeight: "400px",
-                    filter: "brightness(1.5)",
-                    background: "rgba(0, 0, 0, 0.3)",
-                    borderRadius: "20px",
-                    padding: "20px",
-                    margin: "auto",
-                    border: "1px solid rgba(209, 78, 196, 0.3)"
-                  }}
-                >
-                  <Bar
-                    data={aiProgressData}
-                    options={{ 
-                      maintainAspectRatio: false, 
-                      indexAxis: "y",
-                      plugins: {
-                        legend: {
-                          labels: {
-                            color: '#D14EC4'
-                          }
-                        }
-                      },
-                      scales: {
-                        x: {
-                          ticks: { color: '#ccc' },
-                          grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                        },
-                        y: {
-                          ticks: { color: '#ccc' },
-                          grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Detailed AI Learning Stats per Course */}
+          {/* Detailed AI Learning Stats per Course */}
+          <div className="charts" style={{ marginBottom: '3rem' }}>
             {Object.keys(aiLearningStats).length > 0 && (
               <div style={{ marginBottom: '2rem' }}>
                 <h3 style={{ color: '#AFD14E', marginBottom: '1rem', textAlign: 'center' }}>
@@ -1146,81 +1108,83 @@ const ProfilePage = (props) => {
                       }}>
                         {topic}
                       </h4>
-                      <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
+                      <div style={{ fontSize: '1.05rem', color: '#e0e0e0' }}>
                         <div style={{ 
                           display: 'flex', 
                           justifyContent: 'space-between', 
-                          marginBottom: '0.5rem',
-                          padding: '0.5rem',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '8px'
+                          marginBottom: '0.75rem',
+                          padding: '0.85rem 1rem',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          borderRadius: '10px'
                         }}>
-                          <span>📑 Chapters:</span>
-                          <span style={{ color: colors[index % colors.length] }}>
+                          <span style={{ fontWeight: '500' }}>📑 Chapters:</span>
+                          <span style={{ color: colors[index % colors.length], fontWeight: '700', fontSize: '1.1rem' }}>
                             {stats.completedChapters}/{stats.totalChapters}
                           </span>
                         </div>
                         <div style={{ 
                           display: 'flex', 
                           justifyContent: 'space-between', 
-                          marginBottom: '0.5rem',
-                          padding: '0.5rem',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '8px'
+                          marginBottom: '0.75rem',
+                          padding: '0.85rem 1rem',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          borderRadius: '10px'
                         }}>
-                          <span>⏱️ Study Time:</span>
-                          <span style={{ color: '#AFD14E' }}>
+                          <span style={{ fontWeight: '500' }}>⏱️ Study Time:</span>
+                          <span style={{ color: '#AFD14E', fontWeight: '700', fontSize: '1.1rem' }}>
                             {formatStudyTime(stats.totalStudyTime)}
                           </span>
                         </div>
                         <div style={{ 
                           display: 'flex', 
                           justifyContent: 'space-between', 
-                          marginBottom: '0.5rem',
-                          padding: '0.5rem',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '8px'
+                          marginBottom: '0.75rem',
+                          padding: '0.85rem 1rem',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          borderRadius: '10px'
                         }}>
-                          <span>📝 Notes:</span>
-                          <span style={{ color: '#4ED1B1' }}>{stats.totalNotes}</span>
+                          <span style={{ fontWeight: '500' }}>📝 Notes:</span>
+                          <span style={{ color: '#4ED1B1', fontWeight: '700', fontSize: '1.1rem' }}>{stats.totalNotes}</span>
                         </div>
                         <div style={{ 
                           display: 'flex', 
                           justifyContent: 'space-between', 
                           marginBottom: '1rem',
-                          padding: '0.5rem',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '8px'
+                          padding: '0.85rem 1rem',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          borderRadius: '10px'
                         }}>
-                          <span>🔖 Bookmarks:</span>
-                          <span style={{ color: '#D1854E' }}>{stats.totalBookmarks}</span>
+                          <span style={{ fontWeight: '500' }}>🔖 Bookmarks:</span>
+                          <span style={{ color: '#D1854E', fontWeight: '700', fontSize: '1.1rem' }}>{stats.totalBookmarks}</span>
                         </div>
                         
                         {/* Progress Bar */}
-                        <div style={{ marginTop: '1rem' }}>
+                        <div style={{ marginTop: '1.25rem' }}>
                           <div style={{ 
                             display: 'flex', 
                             justifyContent: 'space-between', 
-                            marginBottom: '0.5rem',
-                            fontSize: '0.8rem'
+                            marginBottom: '0.75rem',
+                            fontSize: '0.95rem'
                           }}>
-                            <span>Progress</span>
-                            <span style={{ color: colors[index % colors.length], fontWeight: 'bold' }}>
+                            <span style={{ fontWeight: '500' }}>Progress</span>
+                            <span style={{ color: colors[index % colors.length], fontWeight: 'bold', fontSize: '1.1rem' }}>
                               {stats.completionPercentage.toFixed(1)}%
                             </span>
                           </div>
                           <div style={{
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            borderRadius: '8px',
-                            height: '8px',
-                            overflow: 'hidden'
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            borderRadius: '10px',
+                            height: '12px',
+                            overflow: 'hidden',
+                            boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.3)'
                           }}>
                             <div style={{
                               background: colors[index % colors.length],
                               height: '100%',
                               width: `${stats.completionPercentage}%`,
                               transition: 'width 0.3s ease',
-                              borderRadius: '8px'
+                              borderRadius: '10px',
+                              boxShadow: `0 0 10px ${colors[index % colors.length]}80`
                             }} />
                           </div>
                         </div>

@@ -6,9 +6,16 @@ from flask_cors import CORS
 import json
 import os
 from datetime import datetime, date
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
 
 api = Flask(__name__)
 CORS(api)
+
+# Configure Gemini for translation
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # Project expiration date - app will not work after this date
 EXPIRATION_DATE = date(2025, 12, 31)  # December 31, 2025
@@ -93,13 +100,30 @@ def login():
     if email not in users or users[email]["password"] != password:
         return jsonify({"error": "Invalid credentials"}), 401
     
+    # Track login history
     user = users[email]
+    if "login_history" not in user:
+        user["login_history"] = []
+    
+    login_record = {
+        "timestamp": datetime.now().isoformat(),
+        "ip": request.remote_addr,
+        "user_agent": request.headers.get('User-Agent', 'Unknown')
+    }
+    user["login_history"].append(login_record)
+    
+    # Keep only last 50 login records
+    user["login_history"] = user["login_history"][-50:]
+    
+    save_users(users)
+    
     return jsonify({
         "message": "Login successful",
         "user": {
             "email": email,
             "name": user["name"],
-            "profile": user.get("profile", {})
+            "profile": user.get("profile", {}),
+            "last_login": login_record["timestamp"]
         }
     })
 
@@ -195,13 +219,48 @@ def get_quiz():
 def get_translations():
     req = request.get_json()
 
-    text = req.get("textArr")
-    toLang = req.get("toLang")
+    text_arr = req.get("textArr")
+    to_lang = req.get("toLang")
 
-    print(f"Translating to {toLang}: { text}")
-    # TODO: Fix translate import
-    # translated_text = translate.translate_text_arr(text_arr=text, target=toLang)
-    return {"error": "Translation service not implemented"}
+    if not text_arr or not to_lang:
+        return jsonify({"error": "Missing textArr or toLang parameters"}), 400
+
+    try:
+        # Use Gemini for translation
+        model = genai.GenerativeModel(model_name="gemini-pro")
+        
+        # Join all texts with separator for batch translation
+        combined_text = "\n---SEPARATOR---\n".join(text_arr)
+        
+        prompt = f"""Translate the following text segments to {to_lang}. 
+Each segment is separated by '---SEPARATOR---'. 
+Return ONLY the translated segments, separated by the same '---SEPARATOR---' marker.
+Do not add any explanations, just the translations.
+
+Text to translate:
+{combined_text}"""
+        
+        response = model.generate_content(prompt)
+        translated_combined = response.text.strip()
+        
+        # Split back into array
+        translated_arr = translated_combined.split("---SEPARATOR---")
+        translated_arr = [t.strip() for t in translated_arr]
+        
+        # Ensure we have the same number of translations
+        if len(translated_arr) != len(text_arr):
+            # Fallback: translate individually
+            translated_arr = []
+            for text in text_arr:
+                resp = model.generate_content(f"Translate to {to_lang}: {text}")
+                translated_arr.append(resp.text.strip())
+        
+        print(f"Translated to {to_lang}: {len(translated_arr)} segments")
+        return jsonify({"translations": translated_arr})
+        
+    except Exception as e:
+        print(f"Translation error: {str(e)}")
+        return jsonify({"error": f"Translation failed: {str(e)}"}), 500
 
 
 @api.route("/api/generate-resource", methods=["POST"])
@@ -232,6 +291,128 @@ def generative_resource():
         request_type=req_data['request_type']
     )
     return resources
+
+
+# Progress Tracking Endpoints
+@api.route("/api/progress/quiz", methods=["POST"])
+def save_quiz_progress():
+    """Save quiz results for a user"""
+    req = request.get_json()
+    email = req.get("email")
+    quiz_data = req.get("quiz_data")
+    
+    if not email or not quiz_data:
+        return jsonify({"error": "Email and quiz_data required"}), 400
+    
+    users = load_users()
+    if email not in users:
+        return jsonify({"error": "User not found"}), 404
+    
+    user = users[email]
+    if "quiz_history" not in user:
+        user["quiz_history"] = []
+    
+    quiz_record = {
+        "timestamp": datetime.now().isoformat(),
+        "course": quiz_data.get("course"),
+        "topic": quiz_data.get("topic"),
+        "score": quiz_data.get("score"),
+        "total": quiz_data.get("total"),
+        "time_spent": quiz_data.get("time_spent", 0)
+    }
+    user["quiz_history"].append(quiz_record)
+    
+    # Update learning stats
+    profile = user.get("profile", {})
+    profile["learning_hours"] = profile.get("learning_hours", 0) + (quiz_record["time_spent"] / 60)
+    user["profile"] = profile
+    
+    save_users(users)
+    return jsonify({"message": "Quiz progress saved", "record": quiz_record})
+
+
+@api.route("/api/progress/roadmap", methods=["POST"])
+def save_roadmap_progress():
+    """Save roadmap progress for a user"""
+    req = request.get_json()
+    email = req.get("email")
+    roadmap_data = req.get("roadmap_data")
+    
+    if not email or not roadmap_data:
+        return jsonify({"error": "Email and roadmap_data required"}), 400
+    
+    users = load_users()
+    if email not in users:
+        return jsonify({"error": "User not found"}), 404
+    
+    user = users[email]
+    if "roadmap_progress" not in user:
+        user["roadmap_progress"] = {}
+    
+    roadmap_id = roadmap_data.get("roadmap_id", roadmap_data.get("topic", "unknown"))
+    user["roadmap_progress"][roadmap_id] = {
+        "updated_at": datetime.now().isoformat(),
+        "topic": roadmap_data.get("topic"),
+        "completed_subtopics": roadmap_data.get("completed_subtopics", []),
+        "current_week": roadmap_data.get("current_week"),
+        "progress_percentage": roadmap_data.get("progress_percentage", 0),
+        "time_spent": roadmap_data.get("time_spent", 0)
+    }
+    
+    # Update learning stats
+    profile = user.get("profile", {})
+    profile["learning_hours"] = profile.get("learning_hours", 0) + (roadmap_data.get("time_spent", 0) / 60)
+    
+    # Check if roadmap completed
+    if roadmap_data.get("progress_percentage", 0) >= 100:
+        profile["courses_completed"] = profile.get("courses_completed", 0) + 1
+        achievements = profile.get("achievements", [])
+        if roadmap_data.get("topic") not in achievements:
+            achievements.append(roadmap_data.get("topic"))
+            profile["achievements"] = achievements
+    
+    user["profile"] = profile
+    save_users(users)
+    return jsonify({"message": "Roadmap progress saved", "progress": user["roadmap_progress"][roadmap_id]})
+
+
+@api.route("/api/progress/<email>", methods=["GET"])
+def get_user_progress(email):
+    """Get all progress data for a user"""
+    users = load_users()
+    if email not in users:
+        return jsonify({"error": "User not found"}), 404
+    
+    user = users[email]
+    return jsonify({
+        "quiz_history": user.get("quiz_history", []),
+        "roadmap_progress": user.get("roadmap_progress", {}),
+        "login_history": user.get("login_history", [])[-10:],  # Last 10 logins
+        "profile": user.get("profile", {})
+    })
+
+
+@api.route("/api/progress/update-learning-time", methods=["POST"])
+def update_learning_time():
+    """Update learning hours for a user"""
+    req = request.get_json()
+    email = req.get("email")
+    minutes = req.get("minutes", 0)
+    
+    if not email:
+        return jsonify({"error": "Email required"}), 400
+    
+    users = load_users()
+    if email not in users:
+        return jsonify({"error": "User not found"}), 404
+    
+    user = users[email]
+    profile = user.get("profile", {})
+    profile["learning_hours"] = profile.get("learning_hours", 0) + (minutes / 60)
+    user["profile"] = profile
+    
+    save_users(users)
+    return jsonify({"message": "Learning time updated", "total_hours": profile["learning_hours"]})
 
 
 if __name__ == "__main__":

@@ -39,16 +39,18 @@ const RoadmapPage = (props) => {
   });
   const [quizStats, setQuizStats] = useState({});
   const [confettiExplode, setConfettiExplode] = useState(false);
+  const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const navigate = useNavigate();
   const topic = searchParams.get("topic");
   
-  // Handle back navigation
+  // Handle back navigation - stay in roadmap if viewing resources
   const handleBack = () => {
-    // Check if there's a previous page in history
-    if (window.history.length > 1) {
-      navigate(-1); // Go back to previous page
+    if (resources) {
+      // If viewing resources, go back to roadmap
+      setResources(null);
+      setModalOpen(false);
     } else {
-      // If no history, go to profile page
+      // Go to profile page
       navigate('/profile');
     }
   };
@@ -124,28 +126,13 @@ const RoadmapPage = (props) => {
             {subtopic.description}
           </p>
         </div>
-        <div
-          className="hardness"
-          onClick={() => {
-            let hardness = prompt(
-              "Rate Hardness on a rating of 1-10 (where 5 means perfect)"
-            );
-            if (hardness) {
-              let hardnessIndex =
-                parseFloat(localStorage.getItem("hardnessIndex")) || 1;
-              hardnessIndex = hardnessIndex + (hardness - 5) / 10;
-              localStorage.setItem("hardnessIndex", hardnessIndex);
-              window.location.reload();
-            }
-          }}
-        >
-          Rate Hardness
-        </div>
 
         <div className="flexbox buttons" style={{ flexDirection: "column" }}>
           <button
             className="resourcesButton"
             onClick={() => {
+              setResources(null); // Clear any previously loaded resources
+              setConfettiExplode(false); // Reset confetti
               setModalOpen(true);
               setResourceParam({
                 subtopic: subtopic.subtopic,
@@ -250,10 +237,12 @@ const RoadmapPage = (props) => {
   const StructuredLearningResource = ({ content, subtopic, time, course }) => {
     const [currentChapter, setCurrentChapter] = useState(0);
     const [completedChapters, setCompletedChapters] = useState(new Set());
-    const [isLearning, setIsLearning] = useState(false);
+    const [isLearning, setIsLearning] = useState(true); // Auto-start timer
     const [studyTime, setStudyTime] = useState(0);
     const [userNotes, setUserNotes] = useState('');
     const [bookmarks, setBookmarks] = useState(new Set());
+    const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+    const contentScrollRef = useState(null);
     
     // Generate structured chapters from content
     const [chapters, setChapters] = useState([]);
@@ -418,6 +407,24 @@ const RoadmapPage = (props) => {
       const autoSave = setTimeout(saveProgress, 2000);
       return () => clearTimeout(autoSave);
     }, [completedChapters, currentChapter, studyTime, userNotes, bookmarks]);
+
+    // Reset scroll tracking when chapter changes
+    useEffect(() => {
+      setHasScrolledToBottom(false);
+      // Scroll to top when chapter changes
+      if (contentScrollRef[0]) {
+        contentScrollRef[0].scrollTop = 0;
+      }
+    }, [currentChapter]);
+
+    // Handle scroll detection
+    const handleScroll = (e) => {
+      const element = e.target;
+      const scrolledToBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
+      if (scrolledToBottom && !hasScrolledToBottom) {
+        setHasScrolledToBottom(true);
+      }
+    };
 
     const markChapterComplete = (chapterIndex) => {
       const newCompleted = new Set(completedChapters);
@@ -668,19 +675,22 @@ const RoadmapPage = (props) => {
                 </div>
                 
                 {/* Chapter Content */}
-                <div style={{ 
-                  color: 'white', 
-                  lineHeight: '1.8',
-                  marginBottom: '2rem',
-                  fontSize: '1.1rem',
-                  maxWidth: 'none',
-                  flex: 1,
-                  overflowY: 'auto'
-                }}>
+                <div 
+                  ref={(el) => contentScrollRef[0] = el}
+                  onScroll={handleScroll}
+                  style={{ 
+                    color: 'white', 
+                    lineHeight: '1.8',
+                    marginBottom: '2rem',
+                    fontSize: '1.1rem',
+                    maxWidth: 'none',
+                    flex: 1,
+                    overflowY: 'auto'
+                  }}>
                   <Markdown>{chapters[currentChapter].content}</Markdown>
                 </div>
 
-                {/* Navigation */}
+                {/* Chapter Navigation */}
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between',
@@ -689,7 +699,9 @@ const RoadmapPage = (props) => {
                   borderTop: '1px solid rgba(255, 255, 255, 0.1)'
                 }}>
                   <button
-                    onClick={() => setCurrentChapter(Math.max(0, currentChapter - 1))}
+                    onClick={() => {
+                      setCurrentChapter(Math.max(0, currentChapter - 1));
+                    }}
                     disabled={currentChapter === 0}
                     style={{
                       background: 'rgba(255, 255, 255, 0.05)',
@@ -701,22 +713,140 @@ const RoadmapPage = (props) => {
                       opacity: currentChapter === 0 ? 0.5 : 1
                     }}
                   >
-                    ← Previous
+                    ← Previous Chapter
                   </button>
                   <button
-                    onClick={() => setCurrentChapter(Math.min(chapters.length - 1, currentChapter + 1))}
-                    disabled={currentChapter === chapters.length - 1}
+                    onClick={() => {
+                      if (hasScrolledToBottom || currentChapter === chapters.length - 1) {
+                        setCurrentChapter(Math.min(chapters.length - 1, currentChapter + 1));
+                      }
+                    }}
+                    disabled={currentChapter === chapters.length - 1 || !hasScrolledToBottom}
                     style={{
-                      background: 'rgba(209, 78, 196, 0.2)',
-                      border: '1px solid #D14EC4',
+                      background: (currentChapter === chapters.length - 1 || !hasScrolledToBottom) ? 'rgba(100, 100, 100, 0.2)' : 'rgba(209, 78, 196, 0.2)',
+                      border: `1px solid ${(currentChapter === chapters.length - 1 || !hasScrolledToBottom) ? 'rgba(100, 100, 100, 0.3)' : '#D14EC4'}`,
                       borderRadius: '8px',
                       padding: '0.75rem 1.5rem',
-                      color: currentChapter === chapters.length - 1 ? '#666' : '#D14EC4',
-                      cursor: currentChapter === chapters.length - 1 ? 'default' : 'pointer',
-                      opacity: currentChapter === chapters.length - 1 ? 0.5 : 1
+                      color: (currentChapter === chapters.length - 1 || !hasScrolledToBottom) ? '#666' : '#D14EC4',
+                      cursor: (currentChapter === chapters.length - 1 || !hasScrolledToBottom) ? 'not-allowed' : 'pointer',
+                      opacity: (currentChapter === chapters.length - 1 || !hasScrolledToBottom) ? 0.5 : 1,
+                      transition: 'all 0.3s ease'
+                    }}
+                    title={!hasScrolledToBottom && currentChapter < chapters.length - 1 ? 'Scroll to bottom to continue' : ''}
+                  >
+                    Next Chapter → {!hasScrolledToBottom && currentChapter < chapters.length - 1 ? '🔒' : ''}
+                  </button>
+                </div>
+                
+                {/* Week/Course Navigation */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  marginTop: '1.5rem',
+                  paddingTop: '1.5rem',
+                  borderTop: '2px solid rgba(209, 78, 196, 0.3)'
+                }}>
+                  <button
+                    onClick={() => {
+                      // Navigate to previous week's course
+                      const roadmaps = JSON.parse(localStorage.getItem('roadmaps')) || {};
+                      const currentRoadmap = roadmaps[topic];
+                      if (!currentRoadmap) return;
+                      
+                      const weeks = Object.keys(currentRoadmap).sort((a, b) => 
+                        parseInt(a.split(' ')[1]) - parseInt(b.split(' ')[1])
+                      );
+                      
+                      const currentWeekKey = weeks.find(week => 
+                        currentRoadmap[week].topic === course ||
+                        currentRoadmap[week].subtopics?.some(sub => sub.title === subtopic)
+                      );
+                      
+                      const currentWeekIndex = weeks.indexOf(currentWeekKey);
+                      if (currentWeekIndex > 0) {
+                        const prevWeek = weeks[currentWeekIndex - 1];
+                        const prevCourse = currentRoadmap[prevWeek];
+                        // Load the first subtopic of previous week
+                        if (prevCourse.subtopics && prevCourse.subtopics.length > 0) {
+                          window.location.href = `/roadmap?topic=${encodeURIComponent(topic)}`;
+                        }
+                      }
+                    }}
+                    style={{
+                      background: 'rgba(78, 209, 177, 0.2)',
+                      border: '1px solid #4ED1B1',
+                      borderRadius: '10px',
+                      padding: '0.75rem 1.5rem',
+                      color: '#4ED1B1',
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      fontWeight: '500',
+                      transition: 'all 0.3s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
                     }}
                   >
-                    Next →
+                    ⬅️ Previous Week Course
+                  </button>
+                  
+                  <div style={{
+                    background: 'rgba(175, 209, 78, 0.15)',
+                    border: '1px solid #AFD14E',
+                    borderRadius: '10px',
+                    padding: '0.75rem 1.5rem',
+                    color: '#AFD14E',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    textAlign: 'center'
+                  }}>
+                    📚 Current: {course}
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      // Navigate to next week's course
+                      const roadmaps = JSON.parse(localStorage.getItem('roadmaps')) || {};
+                      const currentRoadmap = roadmaps[topic];
+                      if (!currentRoadmap) return;
+                      
+                      const weeks = Object.keys(currentRoadmap).sort((a, b) => 
+                        parseInt(a.split(' ')[1]) - parseInt(b.split(' ')[1])
+                      );
+                      
+                      const currentWeekKey = weeks.find(week => 
+                        currentRoadmap[week].topic === course ||
+                        currentRoadmap[week].subtopics?.some(sub => sub.title === subtopic)
+                      );
+                      
+                      const currentWeekIndex = weeks.indexOf(currentWeekKey);
+                      if (currentWeekIndex < weeks.length - 1) {
+                        const nextWeek = weeks[currentWeekIndex + 1];
+                        const nextCourse = currentRoadmap[nextWeek];
+                        // Load the first subtopic of next week
+                        if (nextCourse.subtopics && nextCourse.subtopics.length > 0) {
+                          window.location.href = `/roadmap?topic=${encodeURIComponent(topic)}`;
+                        }
+                      }
+                    }}
+                    style={{
+                      background: 'rgba(78, 209, 177, 0.2)',
+                      border: '1px solid #4ED1B1',
+                      borderRadius: '10px',
+                      padding: '0.75rem 1.5rem',
+                      color: '#4ED1B1',
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      fontWeight: '500',
+                      transition: 'all 0.3s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    Next Week Course ➡️
                   </button>
                 </div>
               </>
@@ -819,6 +949,25 @@ const RoadmapPage = (props) => {
           <button
             className="primary"
             onClick={() => {
+              // Check if we have cached resources first
+              const cacheKey = `ai_resource_${topic}_${resourceParam.course}_${resourceParam.subtopic}`;
+              const cachedResource = localStorage.getItem(cacheKey);
+              
+              if (cachedResource) {
+                // Use cached resource
+                setResources(
+                  <StructuredLearningResource 
+                    content={cachedResource}
+                    subtopic={resourceParam.subtopic}
+                    time={resourceParam.time}
+                    course={resourceParam.course}
+                  />
+                );
+                // Keep modal open to display the resource
+                return;
+              }
+              
+              // Generate new resource if not cached
               setLoading(true);
               axios.defaults.baseURL = "http://localhost:5000";
 
@@ -845,6 +994,9 @@ const RoadmapPage = (props) => {
                   const structuredContent = typeof res.data === 'string' 
                     ? res.data  // Just pass the string content directly
                     : res.data;
+                  
+                  // Cache the resource
+                  localStorage.setItem(cacheKey, structuredContent);
                   
                   setResources(
                     <StructuredLearningResource 
@@ -1012,6 +1164,7 @@ const RoadmapPage = (props) => {
     <div className="roadmap_wrapper">
       <Modal
         open={modalOpen}
+        hideCloseButton={!!resources}
         onClose={() => {
           setModalOpen(false);
           setResources(null);
